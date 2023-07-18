@@ -324,7 +324,7 @@ public class NativeHookDemo extends JFrame implements ActionListener,
     }
 
     /**
-     * The demo project entry point.
+     * The project entry point.
      *
      * @param args unused.
      */
