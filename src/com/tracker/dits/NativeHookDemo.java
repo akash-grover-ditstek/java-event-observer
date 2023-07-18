@@ -30,6 +30,8 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
 
     private static long keyPress=0;
     private static long mouseClick=0;
+
+    private static long lastMillisecond=0;
     /**
      * Menu Items
      */
@@ -51,13 +53,13 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
      * Instantiates a new native hook demo.
      */
     public NativeHookDemo() {
-
+        lastMillisecond = System.currentTimeMillis()/1000;
         if(!SystemTray.isSupported()){
             System.out.println("System tray is not supported !!! ");
             System.exit(0);
         }
 
-        // Setup the main window.
+        // Set up the main window.
         setTitle("Mouse Keyboard Listener");
         setLayout(new BorderLayout());
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -177,7 +179,14 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
             awtException.printStackTrace();
         }
 
+        int interval = 20;
+        Timer timer = new Timer(interval, e -> {
+            long currentMilliSeconds = System.currentTimeMillis()/1000;
+            if((currentMilliSeconds-lastMillisecond)>500)
+                snapShot();
+        });
 
+        timer.start();
 
         /* Note: JNativeHook does *NOT* operate on the event dispatching thread.
          * Because Swing components must be accessed on the event dispatching
@@ -289,11 +298,13 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
             }
             String ts = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(new Date());
             String fileName = path + "SNAP"+ts+"_M"+mouseClick+"K"+keyPress;
+            mouseClick=0;keyPress=0;
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             Rectangle screenRectangle = new Rectangle(screenSize);
             Robot robot = new Robot();
             BufferedImage image = robot.createScreenCapture(screenRectangle);
             ImageIO.write(image, "png", new File(fileName + ".png"));
+            lastMillisecond=System.currentTimeMillis()/1000;
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -381,7 +392,7 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
             txtEventInfo.setCaretPosition(txtEventInfo.getDocument().getLength());
         }
 
-        // Enable all of the listeners.
+        // Enable the listeners.
         menuItemKeyboardEvents.setSelected(true);
         menuItemButtonEvents.setSelected(true);
         menuItemMotionEvents.setSelected(false);
