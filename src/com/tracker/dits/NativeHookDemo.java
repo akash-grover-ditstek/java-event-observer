@@ -8,10 +8,15 @@ import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
 import com.github.kwhat.jnativehook.mouse.*;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,6 +28,8 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
      */
     private static final long serialVersionUID = 1541183202160543102L;
 
+    private static long keyPress=0;
+    private static long mouseClick=0;
     /**
      * Menu Items
      */
@@ -44,8 +51,14 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
      * Instantiates a new native hook demo.
      */
     public NativeHookDemo() {
+
+        if(!SystemTray.isSupported()){
+            System.out.println("System tray is not supported !!! ");
+            System.exit(0);
+        }
+
         // Setup the main window.
-        setTitle("JNativeHook Demo");
+        setTitle("Mouse Keyboard Listener");
         setLayout(new BorderLayout());
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setSize(600, 300);
@@ -134,6 +147,38 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
         handler.setLevel(Level.ALL);
         log.addHandler(handler);
 
+
+        SystemTray systemTray = SystemTray.getSystemTray();
+        Image image = Toolkit.getDefaultToolkit().getImage("src/resource/logo.png");
+        PopupMenu trayPopupMenu = new PopupMenu();
+        MenuItem action = new MenuItem("Show");
+        action.addActionListener(e -> restore());
+        trayPopupMenu.add(action);
+        MenuItem close = new MenuItem("Close");
+        close.addActionListener(e -> {
+            try {
+                GlobalScreen.unregisterNativeHook();
+            } catch (NativeHookException ex) {
+                throw new RuntimeException(ex);
+            }
+            System.runFinalization();
+            System.exit(0);
+
+        });
+        trayPopupMenu.add(close);
+
+        TrayIcon trayIcon = new TrayIcon(image, "Mouse Keyboard Listener", trayPopupMenu);
+        //adjust to default size as per system recommendation
+        trayIcon.setImageAutoSize(true);
+
+        try{
+            systemTray.add(trayIcon);
+        }catch(AWTException awtException){
+            awtException.printStackTrace();
+        }
+
+
+
         /* Note: JNativeHook does *NOT* operate on the event dispatching thread.
          * Because Swing components must be accessed on the event dispatching
          * thread, you *MUST* wrap access to Swing components using the
@@ -212,66 +257,46 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
     }
 
     /**
-     * @see NativeKeyListener#nativeKeyPressed(NativeKeyEvent)
-     */
-    public void nativeKeyPressed(NativeKeyEvent e) {
-        appendDisplay(e.paramString());
-    }
-
-    /**
-     * @see NativeKeyListener#nativeKeyReleased(NativeKeyEvent)
-     */
-    public void nativeKeyReleased(NativeKeyEvent e) {
-        appendDisplay(e.paramString());
-    }
-
-    /**
      * @see NativeKeyListener#nativeKeyTyped(NativeKeyEvent)
      */
     public void nativeKeyTyped(NativeKeyEvent e) {
-        appendDisplay(e.paramString());
+        keyPress++;
+        if(keyPress%10==0){
+            snapShot();
+        }
+        appendDisplay("Key Pressed " + keyPress);
     }
 
-    /**
-     * @see NativeMouseListener#nativeMouseClicked(NativeMouseEvent)
-     */
+//    /**
+//     * @see NativeMouseListener#nativeMouseClicked(NativeMouseEvent)
+//     */
     public void nativeMouseClicked(NativeMouseEvent e) {
-        appendDisplay(e.paramString());
+        mouseClick++;
+        if(mouseClick%10==0){
+            snapShot();
+        }
+        appendDisplay("Mouse Clicked " + mouseClick);
     }
 
-    /**
-     * @see NativeMouseListener#nativeMousePressed(NativeMouseEvent)
-     */
-    public void nativeMousePressed(NativeMouseEvent e) {
-        appendDisplay(e.paramString());
-    }
-
-    /**
-     * @see NativeMouseListener#nativeMouseReleased(NativeMouseEvent)
-     */
-    public void nativeMouseReleased(NativeMouseEvent e) {
-        appendDisplay(e.paramString());
-    }
-
-    /**
-     * @see NativeMouseMotionListener#nativeMouseMoved(NativeMouseEvent)
-     */
-    public void nativeMouseMoved(NativeMouseEvent e) {
-        appendDisplay(e.paramString());
-    }
-
-    /**
-     * @see NativeMouseMotionListener#nativeMouseDragged(NativeMouseEvent)
-     */
-    public void nativeMouseDragged(NativeMouseEvent e) {
-        appendDisplay(e.paramString());
-    }
-
-    /**
-     * @see NativeMouseWheelListener#nativeMouseWheelMoved(NativeMouseWheelEvent)
-     */
-    public void nativeMouseWheelMoved(NativeMouseWheelEvent e) {
-        appendDisplay(e.paramString());
+    private void snapShot()  {
+        try {
+            String path = "/snapping/";
+            File directory = new File(path);
+            if (! directory.exists()){
+                boolean result = directory.mkdir();
+                if(result)
+                    System.out.println(path + " Directory Created");
+            }
+            String ts = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(new Date());
+            String fileName = path + "SNAP"+ts+"_M"+mouseClick+"K"+keyPress;
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            Rectangle screenRectangle = new Rectangle(screenSize);
+            Robot robot = new Robot();
+            BufferedImage image = robot.createScreenCapture(screenRectangle);
+            ImageIO.write(image, "png", new File(fileName + ".png"));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     /**
@@ -370,13 +395,16 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
      */
     public void windowClosed(WindowEvent e) {
         try {
-            GlobalScreen.unregisterNativeHook();
-        } catch (NativeHookException ex) {
+            setExtendedState(JFrame.ICONIFIED);
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
 
-        System.runFinalization();
-        System.exit(0);
+    }
+
+    private void restore(){
+        setVisible(true);
+        setExtendedState(JFrame.NORMAL);
     }
 
     /**
