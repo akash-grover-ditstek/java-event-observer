@@ -15,13 +15,15 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class NativeHookDemo extends JFrame implements ActionListener,
+public class NativeHook extends JFrame implements ActionListener,
         NativeKeyListener, NativeMouseInputListener, NativeMouseWheelListener, WindowListener {
     /**
      * The Constant serialVersionUID.
@@ -50,7 +52,7 @@ public class NativeHookDemo extends JFrame implements ActionListener,
     /**
      * Instantiates a new native hook demo.
      */
-    public NativeHookDemo() {
+    public NativeHook() {
         lastMillisecond = System.currentTimeMillis()/1000;
         if(!SystemTray.isSupported()){
             System.out.println("System tray is not supported !!! ");
@@ -62,6 +64,11 @@ public class NativeHookDemo extends JFrame implements ActionListener,
         setLayout(new BorderLayout());
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setSize(600, 300);
+        try {
+            setIconImage(ImageIO.read(Objects.requireNonNull(this.getClass().getClassLoader().getResource("logo.png"))));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         addWindowListener(this);
 
         JMenuBar menuBar = new JMenuBar();
@@ -331,6 +338,6 @@ public class NativeHookDemo extends JFrame implements ActionListener,
      * @param args unused.
      */
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(NativeHookDemo::new);
+        SwingUtilities.invokeLater(NativeHook::new);
     }
 }
