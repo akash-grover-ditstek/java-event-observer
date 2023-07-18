@@ -113,7 +113,7 @@ public class NativeHookDemo extends JFrame implements ActionListener,
 
 
         SystemTray systemTray = SystemTray.getSystemTray();
-        Image image = Toolkit.getDefaultToolkit().getImage("src/resource/logo.png");
+        Image image = Toolkit.getDefaultToolkit().getImage(this.getClass().getClassLoader().getResource("logo.png"));
         PopupMenu trayPopupMenu = new PopupMenu();
         MenuItem action = new MenuItem("Show");
         action.addActionListener(e -> restore());
@@ -169,8 +169,8 @@ public class NativeHookDemo extends JFrame implements ActionListener,
     private void registerHook(){
         try {
             GlobalScreen.registerNativeHook();
-            GlobalScreen.addNativeKeyListener(this);
-            GlobalScreen.addNativeMouseListener(this);
+            GlobalScreen.removeNativeMouseMotionListener(this);
+            GlobalScreen.removeNativeMouseWheelListener(this);
         } catch (NativeHookException e) {
             throw new RuntimeException(e);
         }
