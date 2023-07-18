@@ -179,7 +179,7 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
             awtException.printStackTrace();
         }
 
-        int interval = 20;
+        int interval = 500000;
         Timer timer = new Timer(interval, e -> {
             long currentMilliSeconds = System.currentTimeMillis()/1000;
             if((currentMilliSeconds-lastMillisecond)>500)
@@ -305,6 +305,7 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
             BufferedImage image = robot.createScreenCapture(screenRectangle);
             ImageIO.write(image, "png", new File(fileName + ".png"));
             lastMillisecond=System.currentTimeMillis()/1000;
+            appendDisplay("Screenshot captured");
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
