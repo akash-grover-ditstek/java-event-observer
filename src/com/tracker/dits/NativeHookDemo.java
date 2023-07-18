@@ -21,7 +21,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class NativeHookDemo extends JFrame implements ActionListener, ItemListener,
+public class NativeHookDemo extends JFrame implements ActionListener,
         NativeKeyListener, NativeMouseInputListener, NativeMouseWheelListener, WindowListener {
     /**
      * The Constant serialVersionUID.
@@ -35,9 +35,7 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
     /**
      * Menu Items
      */
-    private final JMenu menuSubListeners;
     private final JMenuItem menuItemQuit, menuItemClear;
-    private final JCheckBoxMenuItem menuItemEnable, menuItemKeyboardEvents, menuItemButtonEvents, menuItemMotionEvents, menuItemWheelEvents;
 
     /**
      * The text area to display event info.
@@ -91,42 +89,6 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
         menuView.add(menuItemClear);
 
         menuView.addSeparator();
-
-        menuItemEnable = new JCheckBoxMenuItem("Enable Native Hook");
-        menuItemEnable.addItemListener(this);
-        menuItemEnable.setMnemonic(KeyEvent.VK_H);
-        menuItemEnable.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, InputEvent.CTRL_DOWN_MASK + InputEvent.SHIFT_DOWN_MASK));
-        menuView.add(menuItemEnable);
-
-        // Create the listeners sub menu.
-        menuSubListeners = new JMenu("Listeners");
-        menuSubListeners.setMnemonic(KeyEvent.VK_L);
-        menuView.add(menuSubListeners);
-
-        menuItemKeyboardEvents = new JCheckBoxMenuItem("Keyboard Events");
-        menuItemKeyboardEvents.addItemListener(this);
-        menuItemKeyboardEvents.setMnemonic(KeyEvent.VK_K);
-        menuItemKeyboardEvents.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_K, InputEvent.CTRL_DOWN_MASK + InputEvent.SHIFT_DOWN_MASK));
-        menuSubListeners.add(menuItemKeyboardEvents);
-
-        menuItemButtonEvents = new JCheckBoxMenuItem("Button Events");
-        menuItemButtonEvents.addItemListener(this);
-        menuItemButtonEvents.setMnemonic(KeyEvent.VK_B);
-        menuItemButtonEvents.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.CTRL_DOWN_MASK + InputEvent.SHIFT_DOWN_MASK));
-        menuSubListeners.add(menuItemButtonEvents);
-
-        menuItemMotionEvents = new JCheckBoxMenuItem("Motion Events");
-        menuItemMotionEvents.addItemListener(this);
-        menuItemMotionEvents.setMnemonic(KeyEvent.VK_M);
-        menuItemMotionEvents.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.CTRL_DOWN_MASK + InputEvent.SHIFT_DOWN_MASK));
-        menuSubListeners.add(menuItemMotionEvents);
-
-        menuItemWheelEvents = new JCheckBoxMenuItem("Wheel Events");
-        menuItemWheelEvents.addItemListener(this);
-        menuItemWheelEvents.setMnemonic(KeyEvent.VK_W);
-        menuItemWheelEvents.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK + InputEvent.SHIFT_DOWN_MASK));
-        menuSubListeners.add(menuItemWheelEvents);
-
         setJMenuBar(menuBar);
 
         // Create feedback area.
@@ -179,20 +141,15 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
             awtException.printStackTrace();
         }
 
-        int interval = 500000;
+        int interval = 2000;
         Timer timer = new Timer(interval, e -> {
             long currentMilliSeconds = System.currentTimeMillis()/1000;
-            if((currentMilliSeconds-lastMillisecond)>500)
+            if((currentMilliSeconds-lastMillisecond)>20)
                 snapShot();
         });
 
         timer.start();
 
-        /* Note: JNativeHook does *NOT* operate on the event dispatching thread.
-         * Because Swing components must be accessed on the event dispatching
-         * thread, you *MUST* wrap access to Swing components using the
-         * SwingUtilities.invokeLater() or EventQueue.invokeLater() methods.
-         */
         GlobalScreen.setEventDispatcher(new SwingDispatchService());
 
         setVisible(true);
@@ -209,61 +166,16 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
         }
     }
 
-    /**
-     * @see java.awt.event.ItemListener#itemStateChanged(java.awt.event.ItemEvent)
-     */
-    public void itemStateChanged(ItemEvent e) {
-        ItemSelectable item = e.getItemSelectable();
-
-        if (item == menuItemEnable) {
-            try {
-                // Keyboard checkbox was changed, adjust listeners accordingly.
-                if (e.getStateChange() == ItemEvent.SELECTED) {
-                    // Initialize native hook.  This is done on window open because the
-                    // listener requires the txtEventInfo object to be constructed.
-                    GlobalScreen.registerNativeHook();
-                } else {
-                    GlobalScreen.unregisterNativeHook();
-                }
-            } catch (NativeHookException ex) {
-                appendDisplay("Error: " + ex.getMessage());
-            }
-
-            // Set the enable menu item to the state of the hook.
-            menuItemEnable.setState(GlobalScreen.isNativeHookRegistered());
-
-            // Set enable/disable the sub-menus based on the enable menu item's state.
-            menuSubListeners.setEnabled(menuItemEnable.getState());
-        } else if (item == menuItemKeyboardEvents) {
-            // Keyboard checkbox was changed, adjust listeners accordingly
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                GlobalScreen.addNativeKeyListener(this);
-            } else {
-                GlobalScreen.removeNativeKeyListener(this);
-            }
-        } else if (item == menuItemButtonEvents) {
-            // Button checkbox was changed, adjust listeners accordingly
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                GlobalScreen.addNativeMouseListener(this);
-            } else {
-                GlobalScreen.removeNativeMouseListener(this);
-            }
-        } else if (item == menuItemMotionEvents) {
-            // Motion checkbox was changed, adjust listeners accordingly
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                GlobalScreen.addNativeMouseMotionListener(this);
-            } else {
-                GlobalScreen.removeNativeMouseMotionListener(this);
-            }
-        } else if (item == menuItemWheelEvents) {
-            // Motion checkbox was changed, adjust listeners accordingly
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                GlobalScreen.addNativeMouseWheelListener(this);
-            } else {
-                GlobalScreen.removeNativeMouseWheelListener(this);
-            }
+    private void registerHook(){
+        try {
+            GlobalScreen.registerNativeHook();
+            GlobalScreen.addNativeKeyListener(this);
+            GlobalScreen.addNativeMouseListener(this);
+        } catch (NativeHookException e) {
+            throw new RuntimeException(e);
         }
     }
+
 
     /**
      * @see NativeKeyListener#nativeKeyTyped(NativeKeyEvent)
@@ -384,20 +296,12 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
         appendDisplay("Pointer Acceleration Multiplier: " + System.getProperty("jnativehook.pointer.acceleration.multiplier"));
         appendDisplay("Pointer Acceleration Threshold: " + System.getProperty("jnativehook.pointer.acceleration.threshold"));
 
-        // Enable the hook, this will cause the GlobalScreen to be initialized.
-        menuItemEnable.setSelected(true);
-
         try {
             txtEventInfo.setCaretPosition(txtEventInfo.getLineStartOffset(txtEventInfo.getLineCount() - 1));
         } catch (BadLocationException ex) {
             txtEventInfo.setCaretPosition(txtEventInfo.getDocument().getLength());
         }
-
-        // Enable the listeners.
-        menuItemKeyboardEvents.setSelected(true);
-        menuItemButtonEvents.setSelected(true);
-        menuItemMotionEvents.setSelected(false);
-        menuItemWheelEvents.setSelected(true);
+        registerHook();
     }
 
     /**
