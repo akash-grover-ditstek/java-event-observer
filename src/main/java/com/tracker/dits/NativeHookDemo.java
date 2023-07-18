@@ -169,6 +169,8 @@ public class NativeHookDemo extends JFrame implements ActionListener,
     private void registerHook(){
         try {
             GlobalScreen.registerNativeHook();
+            GlobalScreen.addNativeKeyListener(this);
+            GlobalScreen.addNativeMouseListener(this);
             GlobalScreen.removeNativeMouseMotionListener(this);
             GlobalScreen.removeNativeMouseWheelListener(this);
         } catch (NativeHookException e) {
