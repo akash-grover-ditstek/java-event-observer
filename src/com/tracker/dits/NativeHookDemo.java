@@ -359,7 +359,7 @@ public class NativeHookDemo extends JFrame implements ActionListener, ItemListen
         // Enable all of the listeners.
         menuItemKeyboardEvents.setSelected(true);
         menuItemButtonEvents.setSelected(true);
-        menuItemMotionEvents.setSelected(true);
+        menuItemMotionEvents.setSelected(false);
         menuItemWheelEvents.setSelected(true);
     }
 
